@@ -16,20 +16,34 @@ describe Assignment do
   let(:topic_due_date) { build(:topic_due_date, deadline_name: 'Submission', description_url: 'https://github.com/expertiza/expertiza') }
 
   describe '.max_outstanding_reviews' do
-    it 'returns 2 by default'
+    it 'returns 2 by default' do
+      expect(Assignment.max_outstanding_reviews).to eql(2)
+    end
   end
 
   describe '#team_assignment?' do
-    it 'checks an assignment has team'
+    it 'checks an assignment has team' do
+      @assignment = build(:assignment)
+      expect(@assignment.team_assignment).to eql(true)
+    end
   end
 
   describe '#has_topics?' do
     context 'when sign_up_topics array is not empty' do
-      it 'says current assignment has topics'
+      it 'says current assignment has topics' do
+        @assignment = create(:assignment)
+        expect(@assignment.sign_up_topics.empty?).to eql(true)
+        @topic = create(:topic,assignment: @assignment)
+        # or @topic.assignment = @assignment
+        expect(@assignment.sign_up_topics.empty?).to eql(false)
+      end
     end
 
     context 'when sign_up_topics array is empty' do
-      it 'says current assignment does not have a topic'
+      it 'says current assignment does not have a topic' do
+        @assignment = create(:assignment)
+        expect(@assignment.sign_up_topics.empty?).to eql(true)
+      end
     end
   end
 
@@ -49,7 +63,13 @@ describe Assignment do
 
   describe '#valid_num_review' do
     context 'when num_reviews_allowed is not -1 and num_reviews_allowed is less than num_reviews_required' do
-      it 'adds an error message to current assignment object'
+      it 'adds an error message to current assignment object' do
+        # Check error
+        @assignment = create(:assignment)
+        @assignment.num_reviews_allowed = 2
+        @assignment.num_reviews_required = 3
+        expect()
+      end
     end
 
     context 'when the first if condition is false, num_metareviews_allowed is not -1, and num_metareviews_allowed less than num_metareviews_required' do
