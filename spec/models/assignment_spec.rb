@@ -47,8 +47,18 @@ describe Assignment do
     end
   end
 
+  # Ask guide
   describe '.set_courses_to_assignment' do
-    it 'fetches all courses belong to current instructor and with the order of course names'
+    it 'fetches all courses belong to current instructor and with the order of course names' do
+      @instructor = create(:instructor)
+      @assignment = create(:assignment, instructor: @instructor)
+      @course1 = create(:course, instructor: @instructor, name: 'C')
+      @cours2 = create(:course, instructor: @instructor, name: 'B')
+      @cours3 = create(:course, instructor: @instructor, name: 'A')
+      # expect(Assignment.set_courses_to_assignment(@instructor).map {|x| x.name}).to be_an_instance_of(Array)
+      @arr = Assignment.set_courses_to_assignment(@instructor).map {|x| x.name}
+      expect(@arr[0...-1]).to match_array(['A','B','C'])
+    end
   end
 
   describe '#has_teams?' do
@@ -68,12 +78,19 @@ describe Assignment do
         @assignment = create(:assignment)
         @assignment.num_reviews_allowed = 2
         @assignment.num_reviews_required = 3
-        expect()
+        expect(@assignment.num_reviews_allowed < @assignment.num_reviews_required).to eql(!@assignment.has_attribute?(:message))
       end
     end
 
     context 'when the first if condition is false, num_metareviews_allowed is not -1, and num_metareviews_allowed less than num_metareviews_required' do
-      it 'adds an error message to current assignment object'
+      it 'adds an error message to current assignment object' do
+        @assignment = create(:assignment)
+        @assignment.num_reviews_allowed = 4
+        @assignment.num_reviews_required = 3
+        @assignment.num_metareviews_allowed = 2
+        @assignment.num_metareviews_required = 3
+        expect(@assignment.num_metareviews_allowed < @assignment.num_metareviews_required).to eql(!@assignment.has_attribute?(:message))
+      end
     end
   end
 
@@ -91,18 +108,34 @@ describe Assignment do
 
   describe '#dynamic_reviewer_assignment?' do
     context 'when review_assignment_strategy of current assignment is Auto-Selected' do
-      it 'returns true'
+      it 'returns true' do
+        @assignment = create(:assignment)
+        expect(@assignment.review_assignment_strategy).to eql('Auto-Selected')
+      end
     end
 
     context 'when review_assignment_strategy of current assignment is Instructor-Selected' do
-      it 'returns false'
+      it 'returns false' do
+        @assignment = create(:assignment)
+        expect(@assignment.review_assignment_strategy=='Instructor-Selected').to eql(false)
+      end
     end
   end
 
+
+  # Take guidance from guide
   describe '#scores' do
-    context 'when assignment is varying rubric by round assignment' do
-      it 'calculates scores in each round of each team in current assignment'
-    end
+    # context 'when assignment is varying rubric by round assignment' do
+    #   it 'calculates scores in each round of each team in current assignment' do 
+    #     @assignment = create(:assignment)
+    #     @questionnaire = create(:questionnaire)
+    #     @assignment_questionnaire = create(:assignment_questionnaire, assignment: @assignment, used_in_round: 2)
+    #     @questions = create(:question, questionnaire: @questionnaire)
+    #     expect(@assignment.scores(@question)).to include({
+    #       :a => 4 
+    #       })
+    #   end
+    # end
 
     context 'when assignment is not varying rubric by round assignment' do
       it 'calculates scores of each team in current assignment'
@@ -114,7 +147,7 @@ describe Assignment do
       it 'raises an error'
     end
 
-    context 'when course_id is not nil and course_id is larger than 0' do
+    context 'when cours e_id is not nil and course_id is larger than 0' do
       it 'returns path with course directory path'
     end
 
@@ -151,15 +184,29 @@ describe Assignment do
 
   describe '#delete' do
     context 'when there is at least one review response in current assignment' do
-      it 'raises an error messge and current assignment cannot be deleted'
+      it 'raises an error messge and current assignment cannot be deleted' do
+        @assignment = create(:assignment)
+        @review_response_map = create(:review_response_map, assignment: @assignment)
+        expect{@assignent.delete}.to raise_error
+      end
     end
 
     context 'when there is no review response in current assignment and at least one teammate review response in current assignment' do
-      it 'raises an error messge and current assignment cannot be deleted'
+      it 'raises an error messge and current assignment cannot be deleted' do
+        @assignment = create(:assignment)
+        @assignment_team = create(:assignment_team, assignment: @assignment)
+        @team_user = create(:team_user,team: @assignment_team)
+        expect{@assignent.delete}.to raise_error
+      end
     end
 
     context 'when ReviewResponseMap and TeammateReviewResponseMap can be deleted successfully' do
-      it 'deletes other corresponding db records and current assignment'
+      it 'deletes other corresponding db records and current assignment' do
+        @assignment = create(:assignment)
+        @assignment_team = create(:assignment_team, assignment: @assignment)
+        @team_user = create(:team_user,team: @assignment_team)
+        expect(!@assignment.delete.blank?).to eql(true)
+      end
     end
   end
 
@@ -175,29 +222,53 @@ describe Assignment do
 
   describe '#add_participant' do
     context 'when user is nil' do
-      it 'raises an error'
+      it 'raises an error' do
+          @assignment = create(:assignment)
+          expect{@assignment.add_participant('',true,true,true)}.to raise_error
+      end
     end
 
     context 'when the user is already a participant of current assignment' do
-      it 'raises an error'
+      it 'raises an error' do
+          @assignment = create(:assignment)
+          @user = create(:student)
+          @participant = create(:participant, user: @user)
+          expect{@assignment.add_participant(@user.name,true,true,true)}.to raise_error
+      end
     end
 
     context 'when AssignmentParticipant was created successfully' do
-      it 'returns true'
+      it 'returns true' do
+        @assignment = create(:assignment)
+        @user = create(:student)
+        expect(@assignment.add_participant(@user.name,true,true,true)).to eql(true)
+      end
     end
   end
 
   describe '#create_node' do
-    it 'will save node'
+    it 'will save node' do
+      @assignment = create(:assignment)
+      expect(@assignment.create_node).to eql(true)
+    end
   end
 
   describe '#number_of_current_round' do
     context 'when next_due_date is nil' do
-      it 'returns 0'
+      it 'returns 0' do
+        @assignment = create(:assignment)
+        expect(@assignment.number_of_current_round(nil)).to eql(0)
+      end
     end
 
     context 'when next_due_date is not nil' do
-      it 'returns the round of next_due_date'
+      it 'returns the round of next_due_date' do
+        @assignment = create(:assignment)
+        @deadline_right = create(:deadline_right)
+        @assignment_due_date = create(:assignment_due_date, assignment: @assignment, parent_id: @deadline_right.id, review_allowed_id: @deadline_right.id, review_of_review_allowed_id: @deadline_right.id, submission_allowed_id: @deadline_right.id)
+        @assignment_due_date.due_at = DateTime.now.in_time_zone + 1.day
+        expect(@assignment.number_of_current_round(nil)>0).to eql(true)
+      end
     end
   end
 
@@ -274,7 +345,12 @@ describe Assignment do
   end
 
   describe '#review_questionnaire_id' do
-    it 'returns review_questionnaire_id'
+    it 'returns review_questionnaire_id' do
+      @assignment = create(:assignment)
+      @questionnaire = create(:questionnaire)
+      @assignment_questionnaire = create(:assignment_questionnaire, assignment: @assignment, questionnaire: @questionnaire)
+      expect(@assignment.review_questionnaire_id>0).to eql(true)
+    end
   end
 
   describe 'has correct csv values?' do
